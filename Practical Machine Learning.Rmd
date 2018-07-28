@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##Project Description
+#Project Description
 In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
 
 The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with.
@@ -18,7 +18,7 @@ You should create a report describing how you built your model, how you used cro
 
 You will also use your prediction model to predict 20 different test cases.
 
-##Data Preparation
+#Data Preparation
 I removed columns such as user_name, raw_timestamp_part_1, raw_timestamp_part_2, new_window, num_window as well as all the other columns with NA data as they are not useful for my prediction. In the end, the dataset is left with 53 predictors.
 
 ##Reading the data
@@ -33,7 +33,7 @@ data.validation = data.training[-inBuild,]
 data.train = data.training[inBuild,]
 ```
 
-##Standardizing
+#Standardizing
 Since the scale of the variables differ, we have to perform standardization. Using variables without standardization can give variables with larger ranges greater importance in the analysis.Transforming the data to comparable scales 
 can prevent this problem.
 
@@ -63,7 +63,7 @@ data.test.mean = apply(data.test.scaled,2,mean)
 data.test.sd = apply(data.test.scaled,2,sd)
 ```
 
-##Principal Component Analysis
+#Principal Component Analysis
 Because of the huge number of predictors, i decided to first use dimentionality reduction method such as the 
 principal component analysis. I will use the first 18 PCs since they are able to explain 90% of the total variance.
 
@@ -76,7 +76,7 @@ preProc = preProcess(data.train.scaled[,-53], method="pca", pcaComp=18)
 data.train.scaled.pca.final = data.frame(data.train.scaled.pca, classe = data.train.scaled[,53])
 ```
 
-##Multi-class classification
+#Multi-class classification
 Since this is a classification problem, we will use classification methods.
 The misclassification rate of this model is very high.
 ```{r}
