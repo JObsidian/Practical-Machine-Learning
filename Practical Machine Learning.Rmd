@@ -1,0 +1,109 @@
+---
+title: "Practical Machine Learning Project"
+author: "Human Activity Recognition"
+date: "28/07/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Project Description
+In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.
+
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with.
+
+You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. 
+
+You will also use your prediction model to predict 20 different test cases.
+
+##Data Preparation
+I removed columns such as user_name, raw_timestamp_part_1, raw_timestamp_part_2, new_window, num_window as well as all the other columns with NA data as they are not useful for my prediction. In the end, the dataset is left with 53 predictors.
+
+##Reading the data
+```{r}
+# reading the training and testing set
+data.training = read.csv("clean_data_training.csv",header=T)
+data.testing = read.csv("clean_data_testing.csv",header=T)
+# create a validation set from the training set
+library(caret)
+inBuild = createDataPartition(y=data.training$classe, p=0.7, list=FALSE)
+data.validation = data.training[-inBuild,]
+data.train = data.training[inBuild,]
+```
+
+##Standardizing
+Since the scale of the variables differ, we have to perform standardization. Using variables without standardization can give variables with larger ranges greater importance in the analysis.Transforming the data to comparable scales 
+can prevent this problem.
+
+**Training Set**
+```{r}
+# Computing the mean and standard deviation of the training's set input
+data.train.scaled = as.data.frame(scale(data.train[-53]))
+data.train.mean = apply(data.train[,-53], 2,mean)
+data.train.sd = apply(data.train[,-53],2,sd)
+# Combining the scaled data with the response variable
+data.train.scaled = cbind(data.train.scaled, data.train[53])
+```
+**Validation Set**
+```{r}
+# Standardizing the validation set using the training set values
+data.validation.scaled = as.data.frame(scale(data.validation[-53], center = data.train.mean, scale = data.train.sd))
+data.validation.mean = apply(data.validation.scaled,2,mean)
+data.validation.sd = apply(data.validation.scaled,2,sd)
+# # Combining the scaled data with the response variable
+data.validation.scaled = cbind(data.validation.scaled, data.validation[53])
+```
+**Testing Set**
+```{r}
+# Standardizing the test set using the training set values
+data.test.scaled = as.data.frame(scale(data.testing, center = data.train.mean, scale = data.train.sd))
+data.test.mean = apply(data.test.scaled,2,mean)
+data.test.sd = apply(data.test.scaled,2,sd)
+```
+
+##Principal Component Analysis
+Because of the huge number of predictors, i decided to first use dimentionality reduction method such as the 
+principal component analysis. I will use the first 18 PCs since they are able to explain 90% of the total variance.
+
+```{r}
+data.train.scaled.pc = prcomp(data.train.scaled[-53])
+summary(data.train.scaled.pc)
+data.train.scaled.pca = data.train.scaled.pc$x[,1:18]
+preProc = preProcess(data.train.scaled[,-53], method="pca", pcaComp=18)
+# Combining it with the response variable
+data.train.scaled.pca.final = data.frame(data.train.scaled.pca, classe = data.train.scaled[,53])
+```
+
+##Multi-class classification
+Since this is a classification problem, we will use classification methods.
+The misclassification rate of this model is very high.
+```{r}
+library(nnet)
+# we are using the first 18 PCs
+glm.fit = multinom(classe~PC1+PC2+PC3+PC4+PC5+PC6+PC7+PC8+PC9+PC10+PC11+PC12+PC13+PC14+PC15+PC16+PC17+PC18, data = data.train.scaled.pca.final)
+# using the validation data to obtain our prediction
+pred.validation.test = predict(preProc, newdata = data.validation.scaled[,-53])
+pred.glm = predict(glm.fit, newdata = data.frame(pred.validation.test), type="class")
+confusionMatrix(pred.glm, data.validation.scaled$classe)
+```
+
+##Random Forest
+I decided to try the random forest method as it can help improve the overfitting problem for large dataset.
+```{r}
+# using the random forest method
+library(randomForest)
+set.seed(1)
+data.train.scaled.pc = predict(preProc, data.train.scaled[,-53])
+rf.fit = randomForest(data.train.scaled$classe~., data=data.train.scaled.pc)
+# Making predictions on the validation set
+data.validation.scaled.pc = predict(preProc, data.validation.scaled[,-53])
+pred.rf = predict(rf.fit, newdata = data.validation.scaled.pc, type="class")
+confusionMatrix(pred.rf, data.validation.scaled$classe)
+```
+From the confusion matrix, we see that the accuracy is signifcantly better than multi-class logistic.
+
+
+
+
