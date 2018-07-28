@@ -21,7 +21,7 @@ You will also use your prediction model to predict 20 different test cases.
 #Data Preparation
 I removed columns such as user_name, raw_timestamp_part_1, raw_timestamp_part_2, new_window, num_window as well as all the other columns with NA data as they are not useful for my prediction. In the end, the dataset is left with 53 predictors.
 
-##Reading the data
+#Reading the data
 ```{r}
 # reading the training and testing set
 data.training = read.csv("clean_data_training.csv",header=T)
